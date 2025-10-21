@@ -23,6 +23,20 @@ class Agent:
         agent_prefix = f"{self.color}{self.emoji} {self.name}{self.colors.ENDC} "
         agent_results = []
         last_msg_time = 0
+        import os
+        import re
+        from datetime import datetime
+        # Get project name from manager (via bus)
+        project_name = None
+        for msg in self.bus.messages:
+            if msg['recipient'] == self.name and 'Project name:' in msg['content']:
+                m = re.search(r'Project name: ([\w-]+)', msg['content'])
+                if m:
+                    project_name = m.group(1)
+        if not project_name:
+            project_name = 'unknown_project'
+        complete_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'complete', project_name, self.name)
+        os.makedirs(complete_dir, exist_ok=True)
         for task_idx, task in enumerate(self.tasks):
             log_manager(f"{agent_prefix}{self.colors.OKBLUE}Assigned task {task_idx+1}/{len(self.tasks)}: {task}{self.colors.ENDC}", colors=self.colors, level="INFO", prefix="[AGENT] ")
             prev_result = None
@@ -126,8 +140,27 @@ class Agent:
                             conn.commit()
                 except Exception:
                     pass
+                # Save iteration response to file
+                ext = '.txt'
+                if prev_result:
+                    # Try to detect code type
+                    if prev_result.strip().startswith('def ') or prev_result.strip().startswith('import '):
+                        ext = '.py'
+                    elif prev_result.strip().startswith('<html') or prev_result.strip().startswith('<!DOCTYPE html'):
+                        ext = '.html'
+                    elif prev_result.strip().startswith('<?xml'):
+                        ext = '.xml'
+                    elif prev_result.strip().startswith('#include'):
+                        ext = '.cpp'
+                iter_filename = f"task{task_idx+1}_iter{iteration+1}{ext}"
+                iter_filepath = os.path.join(complete_dir, iter_filename)
+                with open(iter_filepath, 'w', encoding='utf-8') as f:
+                    f.write(str(prev_result) if prev_result else '')
+                log_manager(f"{agent_prefix}{self.colors.OKCYAN}Saved iteration to {iter_filepath}{self.colors.ENDC}", colors=self.colors, level="INFO", prefix="[AGENT] ")
                 log_manager(f"{agent_prefix}{self.colors.OKGREEN}Completed iteration {iteration+1} for task {task_idx+1}{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
                 time.sleep(0.1)
             log_manager(f"{agent_prefix}{self.colors.OKGREEN}Completed task {task_idx+1}/{len(self.tasks)}: {task}{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
+            # Notify manager of task completion so orchestration can finish
+            self.bus.send(self.name, "manager", f"Task completed: {task}")
         log_manager(f"{agent_prefix}{self.colors.BOLD}{self.colors.OKGREEN}All assigned tasks and iterations complete!{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
         self.progress = agent_results

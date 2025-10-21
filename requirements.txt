@@ -1,4 +1,4 @@
-ollama
+ollama==0.6.0
 
 # SQLite is built-in with Python, but for clarity:
 sqlite3

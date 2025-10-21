@@ -1,11 +1,13 @@
 # agents/manager.py
-from agents.message_bus import MessageBus
+import time, re, json, os
+from datetime import datetime
+
 from agents.agent_service import AgentService
-from agents.orchestration_service import OrchestrationService
-from agents.manager_analytics import ManagerAnalytics
 from agents.db import init_db, get_db
 from agents.logging_utils import log_manager
-import time, re, json
+from agents.manager_analytics import ManagerAnalytics
+from agents.message_bus import MessageBus
+from agents.orchestration_service import OrchestrationService
 
 class Manager:
     def __init__(self, model_name, ollama, colors, agent_colors, agent_emojis, verbose=False):
@@ -103,6 +105,14 @@ class Manager:
             main_task = input(f"{self.colors.OKBLUE}Enter your custom task:{self.colors.ENDC} ")
         else:
             main_task = choice.strip()
+
+        # Generate random project name
+        import random
+        cousins = ["shrimp", "lobster", "crab", "prawn", "copepod", "amphipod", "isopod", "mantis", "mysid", "barnacle"]
+        colors = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "black", "white", "gray"]
+        project_name = f"{random.choice(cousins)}-{random.choice(colors)}-{random.randint(1, 99)}"
+        log_manager(f"Project name: {project_name}", colors=self.colors, level="INFO")
+        self.project_name = project_name
         log_manager("Manager is analyzing the main task and creating minimal subtasks...", colors=self.colors, level="INFO")
         agent_list = self.estimate_agents(main_task)
         log_manager(f"Manager created {len(agent_list)} minimal subtasks:", colors=self.colors, level="SUCCESS")
@@ -233,6 +243,39 @@ class Manager:
             start_time=start_time,
             token_count=token_count_box[0]
         )
+
+        # --- Save summary and solution to complete/project_name directory ---
+        complete_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'complete', self.project_name)
+        os.makedirs(complete_dir, exist_ok=True)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        # Compile agent files into final report
+        agent_files = []
+        for name in self.agent_names:
+            agent_dir = os.path.join(complete_dir, name)
+            if os.path.exists(agent_dir):
+                for fname in os.listdir(agent_dir):
+                    agent_files.append(os.path.join(agent_dir, fname))
+        report_lines = [
+            f"Project: {self.project_name}",
+            f"Task: {main_task}",
+            f"Completed at: {timestamp}",
+            "",
+            "Agent Summaries:",
+        ]
+        for name in self.agent_names:
+            report_lines.append(f"- {name}: {self.progress.get(name, '')}")
+        report_lines.append("\nAgent Files:")
+        for fpath in agent_files:
+            report_lines.append(f"  {os.path.basename(fpath)}")
+        report_lines.append("\nAgent Task Details:")
+        for name, summaries in agent_task_summaries.items():
+            report_lines.append(f"\n{name}:")
+            for s in summaries:
+                report_lines.append(f"  {s}")
+        report_path = os.path.join(complete_dir, f"report_{timestamp}.txt")
+        with open(report_path, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(report_lines))
+        log_manager(f"\n{self.colors.OKGREEN}Final report saved to {report_path}{self.colors.ENDC}", colors=self.colors, level="SUCCESS")
 
 
     def _get_agent_tasks(self, name):
