@@ -1,6 +1,6 @@
-# agents/agent_service.py
+# agents/services/agent_service.py
 import threading
-from agents.agent import Agent
+from agents.core.agent import Agent
 
 class AgentService:
     def __init__(self, agent_colors, agent_emojis, model_name, ollama, colors, bus, verbose, num_iterations):

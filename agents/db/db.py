@@ -1,4 +1,4 @@
-# agents/db.py
+# db/db.py
 import sqlite3
 from contextlib import contextmanager
 

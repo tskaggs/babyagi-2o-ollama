@@ -1,7 +1,8 @@
-# agents/agent.py
-from agents.logging_utils import log_manager
-from agents.db import get_db
-import threading, time, json, traceback
+# core/agent.py
+from agents.utils.logging_utils import log_manager
+from agents.db.db import get_db
+import threading, time, json, traceback, os, re
+from datetime import datetime
 
 class Agent:
 
@@ -23,9 +24,6 @@ class Agent:
         agent_prefix = f"{self.color}{self.emoji} {self.name}{self.colors.ENDC} "
         agent_results = []
         last_msg_time = 0
-        import os
-        import re
-        from datetime import datetime
         # Get project name from manager (via bus)
         project_name = None
         for msg in self.bus.messages:
@@ -35,8 +33,8 @@ class Agent:
                     project_name = m.group(1)
         if not project_name:
             project_name = 'unknown_project'
-        complete_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'complete', project_name, self.name)
-        os.makedirs(complete_dir, exist_ok=True)
+        output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output', project_name, self.name)
+        os.makedirs(output_dir, exist_ok=True)
         for task_idx, task in enumerate(self.tasks):
             log_manager(f"{agent_prefix}{self.colors.OKBLUE}Assigned task {task_idx+1}/{len(self.tasks)}: {task}{self.colors.ENDC}", colors=self.colors, level="INFO", prefix="[AGENT] ")
             prev_result = None
@@ -46,7 +44,7 @@ class Agent:
                     "role": "system",
                     "content": (
                         "You are an AI assistant designed to iteratively build and execute Python functions using tools provided to you. "
-                        "Your task is to complete the requested task by creating and using tools in a loop until the task is fully done. "
+                        "Your task is to output the requested task by creating and using tools in a loop until the task is fully done. "
                         "Do not ask for user input until you find it absolutely necessary."
                     )
                 }, {"role": "user", "content": task}]
@@ -120,8 +118,8 @@ class Agent:
                                 function_name = tool_call['function']['name']
                                 args = json.loads(tool_call['function']['arguments'])
                                 # Placeholder: implement tool call logic if needed
-                            if 'task_completed' in [tc['function']['name'] for tc in response_message['tool_calls']]:
-                                log_manager(f"{agent_prefix}{self.colors.OKGREEN}{self.colors.BOLD}Task completed.{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
+                            if 'task_output' in [tc['function']['name'] for tc in response_message['tool_calls']]:
+                                log_manager(f"{agent_prefix}{self.colors.OKGREEN}{self.colors.BOLD}Task output.{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
                                 break
                 except Exception as e:
                     error = str(e)
@@ -153,14 +151,14 @@ class Agent:
                     elif prev_result.strip().startswith('#include'):
                         ext = '.cpp'
                 iter_filename = f"task{task_idx+1}_iter{iteration+1}{ext}"
-                iter_filepath = os.path.join(complete_dir, iter_filename)
+                iter_filepath = os.path.join(output_dir, iter_filename)
                 with open(iter_filepath, 'w', encoding='utf-8') as f:
                     f.write(str(prev_result) if prev_result else '')
                 log_manager(f"{agent_prefix}{self.colors.OKCYAN}Saved iteration to {iter_filepath}{self.colors.ENDC}", colors=self.colors, level="INFO", prefix="[AGENT] ")
-                log_manager(f"{agent_prefix}{self.colors.OKGREEN}Completed iteration {iteration+1} for task {task_idx+1}{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
+                log_manager(f"{agent_prefix}{self.colors.OKGREEN}output iteration {iteration+1} for task {task_idx+1}{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
                 time.sleep(0.1)
-            log_manager(f"{agent_prefix}{self.colors.OKGREEN}Completed task {task_idx+1}/{len(self.tasks)}: {task}{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
+            log_manager(f"{agent_prefix}{self.colors.OKGREEN}output task {task_idx+1}/{len(self.tasks)}: {task}{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
             # Notify manager of task completion so orchestration can finish
-            self.bus.send(self.name, "manager", f"Task completed: {task}")
-        log_manager(f"{agent_prefix}{self.colors.BOLD}{self.colors.OKGREEN}All assigned tasks and iterations complete!{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
+            self.bus.send(self.name, "manager", f"Task output: {task}")
+        log_manager(f"{agent_prefix}{self.colors.BOLD}{self.colors.OKGREEN}All assigned tasks and iterations output!{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
         self.progress = agent_results

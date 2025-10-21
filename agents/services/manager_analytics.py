@@ -1,5 +1,5 @@
 # agents/manager_analytics.py
-from agents.logging_utils import log_manager
+from agents.utils.logging_utils import log_manager
 import time
 
 class ManagerAnalytics:
