@@ -118,8 +118,8 @@ class Agent:
                                 function_name = tool_call['function']['name']
                                 args = json.loads(tool_call['function']['arguments'])
                                 # Placeholder: implement tool call logic if needed
-                            if 'task_outputd' in [tc['function']['name'] for tc in response_message['tool_calls']]:
-                                log_manager(f"{agent_prefix}{self.colors.OKGREEN}{self.colors.BOLD}Task outputd.{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
+                            if 'task_output' in [tc['function']['name'] for tc in response_message['tool_calls']]:
+                                log_manager(f"{agent_prefix}{self.colors.OKGREEN}{self.colors.BOLD}Task output.{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
                                 break
                 except Exception as e:
                     error = str(e)
@@ -155,10 +155,10 @@ class Agent:
                 with open(iter_filepath, 'w', encoding='utf-8') as f:
                     f.write(str(prev_result) if prev_result else '')
                 log_manager(f"{agent_prefix}{self.colors.OKCYAN}Saved iteration to {iter_filepath}{self.colors.ENDC}", colors=self.colors, level="INFO", prefix="[AGENT] ")
-                log_manager(f"{agent_prefix}{self.colors.OKGREEN}outputd iteration {iteration+1} for task {task_idx+1}{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
+                log_manager(f"{agent_prefix}{self.colors.OKGREEN}output iteration {iteration+1} for task {task_idx+1}{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
                 time.sleep(0.1)
-            log_manager(f"{agent_prefix}{self.colors.OKGREEN}outputd task {task_idx+1}/{len(self.tasks)}: {task}{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
+            log_manager(f"{agent_prefix}{self.colors.OKGREEN}output task {task_idx+1}/{len(self.tasks)}: {task}{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
             # Notify manager of task completion so orchestration can finish
-            self.bus.send(self.name, "manager", f"Task outputd: {task}")
+            self.bus.send(self.name, "manager", f"Task output: {task}")
         log_manager(f"{agent_prefix}{self.colors.BOLD}{self.colors.OKGREEN}All assigned tasks and iterations output!{self.colors.ENDC}", colors=self.colors, level="SUCCESS", prefix="[AGENT] ")
         self.progress = agent_results

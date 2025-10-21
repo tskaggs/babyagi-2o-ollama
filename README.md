@@ -60,7 +60,7 @@ babyagi-2o-ollama/
 │   ├── integration/
 │   └── service/
 │
-├── complete/
+├── output/
 │   └── <project_name>/
 │       └── <agent_name>/
 │           └── <output_files>
