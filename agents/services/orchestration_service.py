@@ -1,5 +1,5 @@
 # agents/orchestration_service.py
-from agents.logging_utils import log_manager
+from agents.utils.logging_utils import log_manager
 import time, json
 
 class OrchestrationService:

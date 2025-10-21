@@ -1,7 +1,7 @@
 # main.py
-from agents.logging_utils import log_manager
-from agents.manager import Manager
-from agents.config import Colors, AGENT_COLORS, AGENT_EMOJIS, MODEL_NAME
+from agents.utils.logging_utils import log_manager
+from agents.core.manager import Manager
+from agents.utils.config import Colors, AGENT_COLORS, AGENT_EMOJIS, MODEL_NAME
 import argparse, ollama
 
 # Entry point

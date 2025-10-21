@@ -1,13 +1,13 @@
-# agents/manager.py
-import time, re, json, os
-from datetime import datetime
+# core/manager.py
+import time, re, json, os, random
 
-from agents.agent_service import AgentService
-from agents.db import init_db, get_db
-from agents.logging_utils import log_manager
-from agents.manager_analytics import ManagerAnalytics
-from agents.message_bus import MessageBus
-from agents.orchestration_service import OrchestrationService
+from datetime import datetime
+from agents.services.agent_service import AgentService
+from agents.db.db import init_db, get_db
+from agents.utils.logging_utils import log_manager
+from agents.services.manager_analytics import ManagerAnalytics
+from agents.utils.message_bus import MessageBus
+from agents.services.orchestration_service import OrchestrationService
 
 class Manager:
     def __init__(self, model_name, ollama, colors, agent_colors, agent_emojis, verbose=False):
@@ -88,6 +88,10 @@ class Manager:
 
 
     def orchestrate(self):
+        # Ensure 'output' directory exists
+        output_root = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output')
+        if not os.path.exists(output_root):
+            os.makedirs(output_root, exist_ok=True)
         init_db()
         # Show two example tasks and allow user to select or enter their own
         example1 = "Scrape techmeme.com and summarize the top headlines."
@@ -107,7 +111,6 @@ class Manager:
             main_task = choice.strip()
 
         # Generate random project name
-        import random
         cousins = ["shrimp", "lobster", "crab", "prawn", "copepod", "amphipod", "isopod", "mantis", "mysid", "barnacle"]
         colors = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "black", "white", "gray"]
         project_name = f"{random.choice(cousins)}-{random.choice(colors)}-{random.randint(1, 99)}"
@@ -244,14 +247,14 @@ class Manager:
             token_count=token_count_box[0]
         )
 
-        # --- Save summary and solution to complete/project_name directory ---
-        complete_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'complete', self.project_name)
-        os.makedirs(complete_dir, exist_ok=True)
+        # --- Save summary and solution to output/project_name directory ---
+        output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output', self.project_name)
+        os.makedirs(output_dir, exist_ok=True)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         # Compile agent files into final report
         agent_files = []
         for name in self.agent_names:
-            agent_dir = os.path.join(complete_dir, name)
+            agent_dir = os.path.join(output_dir, name)
             if os.path.exists(agent_dir):
                 for fname in os.listdir(agent_dir):
                     agent_files.append(os.path.join(agent_dir, fname))
@@ -272,7 +275,7 @@ class Manager:
             report_lines.append(f"\n{name}:")
             for s in summaries:
                 report_lines.append(f"  {s}")
-        report_path = os.path.join(complete_dir, f"report_{timestamp}.txt")
+        report_path = os.path.join(output_dir, f"report_{timestamp}.txt")
         with open(report_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(report_lines))
         log_manager(f"\n{self.colors.OKGREEN}Final report saved to {report_path}{self.colors.ENDC}", colors=self.colors, level="SUCCESS")

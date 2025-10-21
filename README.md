@@ -22,6 +22,54 @@ BabyAGI 2o is an exploration into creating the simplest self-building autonomous
 - **Comprehensive Summaries**: When all agents finish, the manager prints a summary of all solutions, total time elapsed, and an approximate token count.
 - **Ollama Error Handling**: If you hit Ollama's hourly usage limit, a clear red error message is shown and the program exits cleanly.
 
+## File Structure
+
+```
+babyagi-2o-ollama/
+│
+├── main.py
+├── requirements.txt
+├── LICENSE
+├── README.md
+├── .gitignore
+├── babyagi.db
+│
+├── agents/
+│   ├── core/
+│   │   ├── agent.py
+│   │   └── manager.py
+│   ├── services/
+│   │   ├── agent_service.py
+│   │   ├── orchestration_service.py
+│   │   └── manager_analytics.py
+│   ├── utils/
+│   │   ├── config.py
+│   │   ├── logging_utils.py
+│   │   └── message_bus.py
+│   └── db/
+│       └── db.py
+│
+├── docs/
+│   ├── agent_service.md
+│   ├── manager_analytics.md
+│   └── orchestration_service.md
+│
+├── tests/
+│   ├── unit/
+│   │   └── test_ollama_connectivity.py
+│   ├── integration/
+│   └── service/
+│
+├── complete/
+│   └── <project_name>/
+│       └── <agent_name>/
+│           └── <output_files>
+│
+└── .venv/
+```
+
+This structure separates core logic, services, utilities, database, documentation, tests, and output for clarity and maintainability.
+
 ## Getting Started
 
 ### Prerequisites
